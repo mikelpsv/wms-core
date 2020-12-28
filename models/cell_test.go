@@ -1,6 +1,19 @@
 package models
 
-import "testing"
+import (
+	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
+	"log"
+	"testing"
+)
+
+func NewMock() (*sql.DB, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	return db, mock
+}
 
 func TestCell_GetNumericView(t *testing.T) {
 	c := new(Cell)
@@ -28,4 +41,27 @@ func TestCell_GetNumeric(t *testing.T) {
 	if strView != "102031004" {
 		t.Errorf("invalid view %s", strView)
 	}
+}
+
+func TestCell_AddProduct(t *testing.T) {
+	s := new(Storage)
+	s.Init("localhost", "wmsdb", "devuser", "devuser")
+	c, err := s.FindCellById(1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	p := new(Product)
+	p.Id = 30
+	p.Name = "Test product"
+	p.Barcode = "5421545465465"
+
+	c.AddProduct(p, 300)
+
+	c2, err := s.FindCellById(2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c2.AddProduct(p, 3)
 }

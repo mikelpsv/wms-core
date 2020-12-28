@@ -11,11 +11,5 @@ type Zone struct {
 	Id       int    `json:"id"`
 	Name     string `json:"name"`
 	WhsId    int    `json:"whs_id"`
-	ZoneType int
-}
-
-func (z *Zone) GetWhs() *Whs {
-	whs := new(Whs)
-	whs.FindById(z.WhsId)
-	return whs
+	ZoneType int    `json:"zone_type"`
 }

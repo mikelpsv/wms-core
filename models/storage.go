@@ -10,6 +10,39 @@ type Storage struct {
 	Db *sql.DB
 }
 
+func (s *Storage) FindWhsById(whsId int64) (*Whs, error) {
+	sqlCell := "SELECT id, name FROM whs WHERE id = $1"
+	row := s.Db.QueryRow(sqlCell, whsId)
+	w := new(Whs)
+	err := row.Scan(&w.Id, &w.Name)
+	if err != nil {
+		return nil, err
+	}
+	return w, nil
+}
+
+func (s *Storage) FindZoneById(zoneId int64) (*Zone, error) {
+	sqlCell := "SELECT id, name, whs_id, zone_type FROM zones WHERE id = $1"
+	row := s.Db.QueryRow(sqlCell, zoneId)
+	z := new(Zone)
+	err := row.Scan(&z.Id, &z.Name, &z.WhsId, &z.ZoneType)
+	if err != nil {
+		return nil, err
+	}
+	return z, nil
+}
+
+func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
+	sqlCell := "SELECT id, name, whs_id, zone_id, passage_id, rack_id, floor FROM cells WHERE id = $1"
+	row := s.Db.QueryRow(sqlCell, cellId)
+	c := new(Cell)
+	err := row.Scan(&c.Id, &c.Name, &c.WhsId, &c.ZoneId, &c.PassageId, &c.RackId, &c.Floor)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	var err error
 	connStr := fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable", host, dbname, dbuser, dbpass)
@@ -27,13 +60,13 @@ func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	return nil
 }
 
-func (s *Storage) Put(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
+func (s *Storage) Put(cell Cell, prod IProduct, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 	sql := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
 	if tx != nil {
-		_, err = tx.Exec(sql, cell.ZoneId, cell.Id, prod.Id, quantity)
+		_, err = tx.Exec(sql, cell.ZoneId, cell.Id, prod.GetProductId(), quantity)
 	} else {
-		_, err = s.Db.Exec(sql, cell.ZoneId, cell.Id, prod.Id, quantity)
+		_, err = s.Db.Exec(sql, cell.ZoneId, cell.Id, prod.GetProductId(), quantity)
 	}
 	if err != nil {
 		return quantity, err
@@ -41,7 +74,7 @@ func (s *Storage) Put(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, e
 	return quantity, nil
 }
 
-func (s *Storage) Get(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
+func (s *Storage) Get(cell Cell, prod IProduct, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 
 	if tx == nil {
@@ -53,7 +86,7 @@ func (s *Storage) Get(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, e
 	}
 
 	sqlInsert := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
-	_, err = tx.Exec(sqlInsert, cell.ZoneId, cell.Id, prod.Id, -1*quantity)
+	_, err = tx.Exec(sqlInsert, cell.ZoneId, cell.Id, prod.GetProductId(), -1*quantity)
 	if err != nil {
 		return 0, err
 	}
@@ -62,7 +95,7 @@ func (s *Storage) Get(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, e
 		"FROM storage%d WHERE zone_id = $1 AND cell_id = $2 AND prod_id = $3 "+
 		"GROUP BY zone_id, cell_id, prod_id "+
 		"HAVING SUM(quantity) < 0", cell.WhsId)
-	rows, err := tx.Query(sqlQuant, cell.ZoneId, cell.Id, prod.Id)
+	rows, err := tx.Query(sqlQuant, cell.ZoneId, cell.Id, prod.GetProductId())
 	if err != nil {
 		// ошибка контроля
 		return 0, err
@@ -116,7 +149,7 @@ func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (*map[int]int, erro
 	return &res, nil
 }
 
-func (s *Storage) Move(cellSrc, cellDst Cell, prod Product, quantity int) error {
+func (s *Storage) Move(cellSrc, cellDst Cell, prod IProduct, quantity int) error {
 	// TODO: cellSrc.WhsId <> cellDst.WhsId - веременной разрыв или виртуальное перемещение
 
 	_, err := s.Get(cellSrc, prod, quantity, nil)
@@ -129,3 +162,4 @@ func (s *Storage) Move(cellSrc, cellDst Cell, prod Product, quantity int) error 
 	}
 	return nil
 }
+
