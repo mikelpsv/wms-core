@@ -27,9 +27,9 @@ func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	return nil
 }
 
-func (s *Storage) Put(whsId int, cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
+func (s *Storage) Put(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
-	sql := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", whsId)
+	sql := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
 	if tx != nil {
 		_, err = tx.Exec(sql, cell.ZoneId, cell.Id, prod.Id, quantity)
 	} else {
@@ -41,55 +41,50 @@ func (s *Storage) Put(whsId int, cell Cell, prod Product, quantity int, tx *sql.
 	return quantity, nil
 }
 
-func (s *Storage) Get(whsId int, cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
+func (s *Storage) Get(cell Cell, prod Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 
-	if tx != nil {
-		var quant int
-
-		sqlCell := fmt.Sprintf("SELECT * FROM storage%d WHERE zone_id = $1 AND cell_id = $2 AND prod_id = $3 FOR SHARE", whsId)
-		_, err = tx.Query(sqlCell, cell.ZoneId, cell.Id, prod.Id)
+	if tx == nil {
+		tx, err = s.Db.Begin()
 		if err != nil {
-			//
-		}
-		// удалось наложить блокировку
-
-		sqlQuantity := fmt.Sprintf("SELECT SUM(quantity) AS quantity "+
-			"FROM storage%d WHERE zone_id = $1 AND cell_id = $2 AND prod_id = $3 "+
-			"GROUP BY zone_id, cell_id, prod_id "+
-			"HAVING SUM(quantity) <> 0", whsId)
-
-		rows, err := tx.Query(sqlQuantity, cell.ZoneId, cell.Id, prod.Id)
-		if err != nil {
-
-		}
-		defer rows.Close()
-		rows.Next()
-		rows.Scan(&quant)
-
-		if err != nil {
-			tx.Rollback()
-			return quantity, err
-		}
-		if quant < quantity {
-			tx.Rollback()
+			// не смогли начать транзакцию
+			return 0, err
 		}
 	}
 
-	sql := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", whsId)
-	if tx != nil {
-		_, err = tx.Exec(sql, cell.ZoneId, cell.Id, prod.Id, -1*quantity)
-	} else {
-		_, err = s.Db.Exec(sql, cell.ZoneId, cell.Id, prod.Id, -1*quantity)
-	}
+	sqlInsert := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
+	_, err = tx.Exec(sqlInsert, cell.ZoneId, cell.Id, prod.Id, -1*quantity)
 	if err != nil {
-		return quantity, err
+		return 0, err
 	}
 
+	sqlQuant := fmt.Sprintf("SELECT SUM(quantity) AS quantity "+
+		"FROM storage%d WHERE zone_id = $1 AND cell_id = $2 AND prod_id = $3 "+
+		"GROUP BY zone_id, cell_id, prod_id "+
+		"HAVING SUM(quantity) < 0", cell.WhsId)
+	rows, err := tx.Query(sqlQuant, cell.ZoneId, cell.Id, prod.Id)
+	if err != nil {
+		// ошибка контроля
+		return 0, err
+	}
+
+	// мы должны получить пустой запрос
+	if rows.Next() {
+		err = tx.Rollback()
+		if err != nil {
+			// ошибка отката... все очень плохо
+			return 0, err
+		}
+		return 0, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
 	return quantity, nil
 }
 
-func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx, forUpdate string) (*map[int]int, error) {
+func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (*map[int]int, error) {
 	var zoneId, cellId, prodId, quantity int
 	res := make(map[int]int)
 
@@ -97,7 +92,15 @@ func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx, forUpdate string) (
 		"FROM storage%d WHERE zone_id = $1 AND cell_id = $2 "+
 		"GROUP BY zone_id, cell_id, prod_id "+
 		"HAVING SUM(quantity) <> 0 %s", whsId, "")
-	rows, err := s.Db.Query(sqlQuantity, cell.ZoneId, cell.Id)
+
+	var err error
+	var rows *sql.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(sqlQuantity, cell.ZoneId, cell.Id)
+	} else {
+		rows, err = s.Db.Query(sqlQuantity, cell.ZoneId, cell.Id)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -113,25 +116,15 @@ func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx, forUpdate string) (
 	return &res, nil
 }
 
-func (s *Storage) Move(whsId int, cellSrc, cellDst Cell, prod Product, quantity int) error {
+func (s *Storage) Move(cellSrc, cellDst Cell, prod Product, quantity int) error {
+	// TODO: cellSrc.WhsId <> cellDst.WhsId - веременной разрыв или виртуальное перемещение
 
-	Tx, err := s.Db.Begin()
+	_, err := s.Get(cellSrc, prod, quantity, nil)
 	if err != nil {
 		return err
 	}
-	_, err = s.Get(whsId, cellSrc, prod, quantity, Tx)
-	if err != nil {
-		Tx.Rollback()
-		return err
-	}
-	_, err = s.Put(whsId, cellDst, prod, quantity, Tx)
+	_, err = s.Put(cellDst, prod, quantity, nil)
 	if err == nil {
-		Tx.Rollback()
-		return err
-	}
-
-	err = Tx.Commit()
-	if err != nil {
 		return err
 	}
 	return nil
