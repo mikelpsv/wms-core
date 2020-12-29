@@ -7,8 +7,8 @@ type SpecificSize struct {
 	length       int
 	width        int
 	height       int
-	volume       float32  // lentgth * width * height
-	usefulVolume float32  // lentgth * width * height * K(0.8)
+	volume       float32 // lentgth * width * height
+	usefulVolume float32 // lentgth * width * height * K(0.8)
 }
 
 type Cell struct {
@@ -24,12 +24,12 @@ type Cell struct {
 	Size         SpecificSize `json:"size"`
 }
 
-func (sz *SpecificSize) SetSize(length, width, height int, kUV float32)  {
+func (sz *SpecificSize) SetSize(length, width, height int, kUV float32) {
 	sz.volume = float32(length * width * height)
 	sz.usefulVolume = sz.volume * kUV
 }
 
-func (sz *SpecificSize) GetSize() (int, int, int, float32, float32){
+func (sz *SpecificSize) GetSize() (int, int, int, float32, float32) {
 	return sz.length, sz.width, sz.height, sz.volume, sz.usefulVolume
 }
 

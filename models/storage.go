@@ -43,6 +43,69 @@ func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
 	return c, nil
 }
 
+func (s *Storage) FindProductById(productId int64) (*Product, error) {
+	sqlCell := "SELECT id, name, manufacturer_id, manufacturer_name " +
+		"FROM products p " +
+		"LEFT JOIN manufacturers m ON p.manufacturer_id = m.id " +
+		"WHERE id = $1"
+	row := s.Db.QueryRow(sqlCell, productId)
+	p := new(Product)
+	err := row.Scan(&p.Id, &p.Name, &p.Manufacturer.Id, &p.Manufacturer.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	pBarcodes, err := s.GetProductBarcodes(p.Id)
+	if err != nil {
+		return nil, err
+	}
+	p.Barcodes = *pBarcodes
+	return p, nil
+}
+
+func (s *Storage) FindProductsByBarcode(barcodeStr string) (*Product, error) {
+	var pId int64
+	var bcType int
+	var bcVal string
+
+	sqlBc := "SELECT product_id, barcode, barcode_type FROM barcodes WHERE barcode = $1"
+	row := s.Db.QueryRow(sqlBc, barcodeStr)
+	err := row.Scan(&pId, &bcVal, bcType)
+	if err == sql.ErrNoRows {
+		return nil, err //?
+	}
+
+	p, err := s.FindProductById(pId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (s *Storage) GetProductBarcodes(productId int64) (*map[string]int, error) {
+	var bcVal string
+	var bcType int
+
+	bMap := make(map[string]int)
+
+	sqlBc := "SELECT barcode, barcode_type FROM barcodes WHERE product_id = $1"
+	rows, err := s.Db.Query(sqlBc, productId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&bcVal, &bcType)
+		if err != nil {
+			return nil, err
+		}
+		bMap[bcVal] = bcType
+	}
+	return &bMap, nil
+}
+
 func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	var err error
 	connStr := fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable", host, dbname, dbuser, dbpass)
@@ -100,7 +163,7 @@ func (s *Storage) Get(cell Cell, prod IProduct, quantity int, tx *sql.Tx) (int, 
 		// ошибка контроля
 		return 0, err
 	}
-
+	defer rows.Close()
 	// мы должны получить пустой запрос
 	if rows.Next() {
 		err = tx.Rollback()
@@ -162,4 +225,3 @@ func (s *Storage) Move(cellSrc, cellDst Cell, prod IProduct, quantity int) error
 	}
 	return nil
 }
-

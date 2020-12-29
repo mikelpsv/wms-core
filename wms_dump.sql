@@ -21,6 +21,19 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: barcodes; Type: TABLE; Schema: public; Owner: devuser
+--
+
+CREATE TABLE public.barcodes (
+    product_id integer,
+    barcode character varying(128) DEFAULT ''::character varying NOT NULL,
+    barcode_type integer NOT NULL
+);
+
+
+ALTER TABLE public.barcodes OWNER TO devuser;
+
+--
 -- Name: cells; Type: TABLE; Schema: public; Owner: devuser
 --
 
@@ -65,6 +78,75 @@ ALTER TABLE public.cells_id_seq OWNER TO devuser;
 --
 
 ALTER SEQUENCE public.cells_id_seq OWNED BY public.cells.id;
+
+
+--
+-- Name: manufacturers; Type: TABLE; Schema: public; Owner: devuser
+--
+
+CREATE TABLE public.manufacturers (
+    id integer NOT NULL,
+    name character varying(255) DEFAULT ''::character varying NOT NULL
+);
+
+
+ALTER TABLE public.manufacturers OWNER TO devuser;
+
+--
+-- Name: manufacturers_id_seq; Type: SEQUENCE; Schema: public; Owner: devuser
+--
+
+CREATE SEQUENCE public.manufacturers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.manufacturers_id_seq OWNER TO devuser;
+
+--
+-- Name: manufacturers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: devuser
+--
+
+ALTER SEQUENCE public.manufacturers_id_seq OWNED BY public.manufacturers.id;
+
+
+--
+-- Name: products; Type: TABLE; Schema: public; Owner: devuser
+--
+
+CREATE TABLE public.products (
+    id integer NOT NULL,
+    name character varying(255) DEFAULT ''::character varying NOT NULL,
+    manufacturer_id integer DEFAULT 0
+);
+
+
+ALTER TABLE public.products OWNER TO devuser;
+
+--
+-- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: devuser
+--
+
+CREATE SEQUENCE public.products_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.products_id_seq OWNER TO devuser;
+
+--
+-- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: devuser
+--
+
+ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
 
 
 --
@@ -159,6 +241,20 @@ ALTER TABLE ONLY public.cells ALTER COLUMN id SET DEFAULT nextval('public.cells_
 
 
 --
+-- Name: manufacturers id; Type: DEFAULT; Schema: public; Owner: devuser
+--
+
+ALTER TABLE ONLY public.manufacturers ALTER COLUMN id SET DEFAULT nextval('public.manufacturers_id_seq'::regclass);
+
+
+--
+-- Name: products id; Type: DEFAULT; Schema: public; Owner: devuser
+--
+
+ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.products_id_seq'::regclass);
+
+
+--
 -- Name: whs id; Type: DEFAULT; Schema: public; Owner: devuser
 --
 
@@ -173,12 +269,36 @@ ALTER TABLE ONLY public.zones ALTER COLUMN id SET DEFAULT nextval('public.zones_
 
 
 --
+-- Data for Name: barcodes; Type: TABLE DATA; Schema: public; Owner: devuser
+--
+
+COPY public.barcodes (product_id, barcode, barcode_type) FROM stdin;
+\.
+
+
+--
 -- Data for Name: cells; Type: TABLE DATA; Schema: public; Owner: devuser
 --
 
 COPY public.cells (id, name, whs_id, zone_id, passage_id, rack_id, floor, size_length, size_width, size_height, size_volume, size_usefull_volume, size_weight, is_size_free, is_weight_free) FROM stdin;
 1	test 1	1	1	2	0	3	0	0	0	0	0	0	f	f
 2	invalid storage	99	1	1	0	1	0	0	0	0	0	0	f	f
+\.
+
+
+--
+-- Data for Name: manufacturers; Type: TABLE DATA; Schema: public; Owner: devuser
+--
+
+COPY public.manufacturers (id, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: devuser
+--
+
+COPY public.products (id, name, manufacturer_id) FROM stdin;
 \.
 
 
@@ -222,6 +342,20 @@ SELECT pg_catalog.setval('public.cells_id_seq', 2, true);
 
 
 --
+-- Name: manufacturers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: devuser
+--
+
+SELECT pg_catalog.setval('public.manufacturers_id_seq', 1, false);
+
+
+--
+-- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: devuser
+--
+
+SELECT pg_catalog.setval('public.products_id_seq', 1, false);
+
+
+--
 -- Name: whs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: devuser
 --
 
@@ -244,6 +378,22 @@ ALTER TABLE ONLY public.cells
 
 
 --
+-- Name: manufacturers manufacturers_pk; Type: CONSTRAINT; Schema: public; Owner: devuser
+--
+
+ALTER TABLE ONLY public.manufacturers
+    ADD CONSTRAINT manufacturers_pk PRIMARY KEY (id);
+
+
+--
+-- Name: products products_pk; Type: CONSTRAINT; Schema: public; Owner: devuser
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_pk PRIMARY KEY (id);
+
+
+--
 -- Name: whs whs_pk; Type: CONSTRAINT; Schema: public; Owner: devuser
 --
 
@@ -260,6 +410,13 @@ ALTER TABLE ONLY public.zones
 
 
 --
+-- Name: barcodes_barcode_uindex; Type: INDEX; Schema: public; Owner: devuser
+--
+
+CREATE UNIQUE INDEX barcodes_barcode_uindex ON public.barcodes USING btree (barcode);
+
+
+--
 -- Name: cells_id_uindex; Type: INDEX; Schema: public; Owner: devuser
 --
 
@@ -271,6 +428,14 @@ CREATE UNIQUE INDEX cells_id_uindex ON public.cells USING btree (id);
 --
 
 CREATE UNIQUE INDEX cells_whs_id_zone_id_passage_id_floor_uindex ON public.cells USING btree (whs_id, zone_id, passage_id, floor);
+
+
+--
+-- Name: products products_manufacturers_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: devuser
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_manufacturers_id_fk FOREIGN KEY (manufacturer_id) REFERENCES public.manufacturers(id);
 
 
 --

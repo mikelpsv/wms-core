@@ -54,7 +54,9 @@ func TestCell_AddProduct(t *testing.T) {
 	p := new(Product)
 	p.Id = 30
 	p.Name = "Test product"
-	p.Barcode = "5421545465465"
+	p.Barcodes = map[string]int{
+		"5421545465465": 1,
+	}
 
 	c.AddProduct(p, 300)
 

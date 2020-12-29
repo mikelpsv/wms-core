@@ -13,10 +13,10 @@ func TestStorage_Init(t *testing.T) {
 	s.Init("localhost", "wmsdb", "devuser", "devuser")
 
 	prod32 := Product{
-		Id:      32,
-		Name:    "tedst",
-		Barcode: "",
-		Size:    SpecificSize{},
+		Id:       32,
+		Name:     "tedst",
+		Barcodes: make(map[string]int),
+		Size:     SpecificSize{},
 	}
 
 	_, err := s.Get(Cell{Id: 2, WhsId: 1, ZoneId: 1}, &prod32, 180, nil)
@@ -138,5 +138,62 @@ func TestStorage_FindCellById(t *testing.T) {
 	if c != nil {
 		t.Error(errors.New("cell is not nil"))
 	}
+
+}
+
+func TestStorage_FindProductById(t *testing.T) {
+	db, mock := NewMock()
+	defer db.Close()
+
+	rowsBc := sqlmock.NewRows([]string{"barcode", "barcode_type"})
+	rowsBc.AddRow("123456789", 1)
+
+	rows := sqlmock.NewRows([]string{"id", "name", "manufacturer_id", "manufacturer_name"})
+	rows.AddRow(1, "test 1", 1, "Pfizer")
+
+	mock.ExpectQuery("^SELECT (.+) FROM products").
+		WillReturnRows(rows)
+
+	mock.ExpectQuery("^SELECT (.+) FROM barcodes").
+		WillReturnRows(rowsBc)
+
+	s := new(Storage)
+	s.Db = db
+	p, err := s.FindProductById(1)
+	if err != nil {
+		t.Error(err)
+	}
+	if p == nil {
+		t.Error(errors.New("product is nil"))
+	}
+
+	rowsBc = sqlmock.NewRows([]string{"barcode", "barcode_type"})
+
+	rows = sqlmock.NewRows([]string{"id", "name", "manufacturer_id", "manufacturer_name"})
+	mock.ExpectQuery("^SELECT (.+) FROM products").
+		WillReturnRows(rows)
+
+	mock.ExpectQuery("^SELECT (.+) FROM barcodes").
+		WillReturnRows(rowsBc)
+
+	p, err = s.FindProductById(999)
+
+	if err != sql.ErrNoRows {
+		t.Error(err, "error must be sql.ErrNoRows")
+	}
+	if err == nil {
+		t.Error(errors.New("no product - no error"))
+	}
+	if p != nil {
+		t.Error(errors.New("product is not nil"))
+	}
+
+}
+
+func TestStorage_FindProductsByBarcode(t *testing.T) {
+
+}
+
+func TestStorage_GetProductBarcodes(t *testing.T) {
 
 }
