@@ -194,8 +194,7 @@ func TestStorage_FindProductsByBarcode(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-
-	bc:= "123456789456"
+	bc := "123456789456"
 	// не нашли штрихкод
 	rowsBc := sqlmock.NewRows([]string{"product_id", "barcode", "barcode_type"})
 	mock.ExpectQuery("^SELECT (.+) FROM barcodes").
@@ -210,7 +209,7 @@ func TestStorage_FindProductsByBarcode(t *testing.T) {
 	s := new(Storage)
 	s.Db = db
 	p, err := s.FindProductsByBarcode(bc)
-	if err != sql.ErrNoRows{
+	if err != sql.ErrNoRows {
 		t.Error("err must be sql.ErrNoRows")
 	}
 
@@ -242,7 +241,6 @@ func TestStorage_FindProductsByBarcode(t *testing.T) {
 	if p != nil {
 		t.Error(errors.New("product must be nil"))
 	}
-
 
 	db, mock = NewMock()
 	defer db.Close()
@@ -300,7 +298,6 @@ func TestStorage_GetProductBarcodes(t *testing.T) {
 	if mBc != nil {
 		t.Error("result must be nil")
 	}
-
 
 	rowsBc.AddRow("12345678902", 1)
 	rowsBc.AddRow("123456789032", 2)

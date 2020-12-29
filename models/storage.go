@@ -44,7 +44,7 @@ func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
 }
 
 func (s *Storage) FindProductById(productId int64) (*Product, error) {
-	sqlCell := "SELECT id, name, manufacturer_id, manufacturer_name " +
+	sqlCell := "SELECT p.id, p.name, p.manufacturer_id, m.name as manufacturer_name " +
 		"FROM products p " +
 		"LEFT JOIN manufacturers m ON p.manufacturer_id = m.id " +
 		"WHERE id = $1"
