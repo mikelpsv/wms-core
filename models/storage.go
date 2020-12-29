@@ -47,7 +47,7 @@ func (s *Storage) FindProductById(productId int64) (*Product, error) {
 	sqlCell := "SELECT p.id, p.name, p.manufacturer_id, m.name as manufacturer_name " +
 		"FROM products p " +
 		"LEFT JOIN manufacturers m ON p.manufacturer_id = m.id " +
-		"WHERE id = $1"
+		"WHERE p.id = $1"
 	row := s.Db.QueryRow(sqlCell, productId)
 	p := new(Product)
 	err := row.Scan(&p.Id, &p.Name, &p.Manufacturer.Id, &p.Manufacturer.Name)
