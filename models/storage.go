@@ -70,9 +70,9 @@ func (s *Storage) FindProductsByBarcode(barcodeStr string) (*Product, error) {
 
 	sqlBc := "SELECT product_id, barcode, barcode_type FROM barcodes WHERE barcode = $1"
 	row := s.Db.QueryRow(sqlBc, barcodeStr)
-	err := row.Scan(&pId, &bcVal, bcType)
-	if err == sql.ErrNoRows {
-		return nil, err //?
+	err := row.Scan(&pId, &bcVal, &bcType)
+	if err != nil {
+		return nil, err
 	}
 
 	p, err := s.FindProductById(pId)
@@ -96,12 +96,17 @@ func (s *Storage) GetProductBarcodes(productId int64) (*map[string]int, error) {
 		return nil, err
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		err := rows.Scan(&bcVal, &bcType)
 		if err != nil {
 			return nil, err
 		}
 		bMap[bcVal] = bcType
+	}
+
+	if len(bMap) == 0 {
+		return nil, sql.ErrNoRows
 	}
 	return &bMap, nil
 }
