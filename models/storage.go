@@ -10,6 +10,12 @@ type Storage struct {
 	Db *sql.DB
 }
 
+func (s *Storage) GetProductService() *ProductService {
+	ps := new(ProductService)
+	ps.Storage = s
+	return ps
+}
+
 func (s *Storage) FindWhsById(whsId int64) (*Whs, error) {
 	sqlCell := "SELECT id, name FROM whs WHERE id = $1"
 	row := s.Db.QueryRow(sqlCell, whsId)
@@ -110,6 +116,7 @@ func (s *Storage) GetProductBarcodes(productId int64) (*map[string]int, error) {
 	}
 	return &bMap, nil
 }
+
 
 func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	var err error
