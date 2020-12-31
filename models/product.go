@@ -22,8 +22,6 @@ type Product struct {
 	Size         SpecificSize   `json:"size"`
 }
 
-
-
 func (p *Product) GetProductId() int64 {
 	return p.Id
 }
@@ -31,7 +29,6 @@ func (p *Product) GetProductId() int64 {
 type IProduct interface {
 	GetProductId() int64
 }
-
 
 type ProductService struct {
 	Storage *Storage
@@ -62,4 +59,46 @@ func (ps *ProductService) GetProductBarcodes(productId int64) (*map[string]int, 
 		return nil, sql.ErrNoRows
 	}
 	return &bMap, nil
+}
+
+func (ps *ProductService) FindProductById(productId int64) (*Product, error) {
+
+	sqlCell := "SELECT p.id, p.name, p.manufacturer_id, m.name as manufacturer_name " +
+		"FROM products p " +
+		"LEFT JOIN manufacturers m ON p.manufacturer_id = m.id " +
+		"WHERE p.id = $1"
+	row := ps.Storage.Db.QueryRow(sqlCell, productId)
+	p := new(Product)
+	err := row.Scan(&p.Id, &p.Name, &p.Manufacturer.Id, &p.Manufacturer.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	pBarcodes, err := ps.GetProductBarcodes(p.Id)
+	if err != nil {
+		return nil, err
+	}
+	p.Barcodes = *pBarcodes
+	return p, nil
+}
+
+func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, error) {
+	var pId int64
+	var bcType int
+	var bcVal string
+
+	sqlBc := "SELECT product_id, barcode, barcode_type FROM barcodes WHERE barcode = $1"
+	row := ps.Storage.Db.QueryRow(sqlBc, barcodeStr)
+	err := row.Scan(&pId, &bcVal, &bcType)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := ps.FindProductById(pId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
