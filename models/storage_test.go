@@ -19,11 +19,12 @@ func TestStorage_Init(t *testing.T) {
 		Size:     SpecificSize{},
 	}
 
-	_, err := s.Get(Cell{Id: 2, WhsId: 1, ZoneId: 1}, &prod32, 180, nil)
+	c := Cell{Id: 2, WhsId: 1, ZoneId: 1}
+	_, err := s.Get(&c, &prod32, 180, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err = s.Get(Cell{Id: 2, WhsId: 1, ZoneId: 1}, &prod32, 30, nil)
+	_, err = s.Get(&c, &prod32, 30, nil)
 	if err != nil {
 		fmt.Println(err)
 	}

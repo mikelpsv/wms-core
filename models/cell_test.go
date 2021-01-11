@@ -58,12 +58,13 @@ func TestCell_AddProduct(t *testing.T) {
 		"5421545465465": 1,
 	}
 
-	c.AddProduct(p, 300)
+	cs := new(CellService)
+	cs.AddProduct(c, p, 300)
 
 	c2, err := s.FindCellById(2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	c2.AddProduct(p, 3)
+	cs.AddProduct(c2, p, 3)
 }

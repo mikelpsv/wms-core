@@ -22,14 +22,6 @@ type Product struct {
 	Size         SpecificSize   `json:"size"`
 }
 
-func (p *Product) GetProductId() int64 {
-	return p.Id
-}
-
-type IProduct interface {
-	GetProductId() int64
-}
-
 type ProductService struct {
 	Storage *Storage
 }

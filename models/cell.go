@@ -24,6 +24,10 @@ type Cell struct {
 	Size         SpecificSize `json:"size"`
 }
 
+type CellService struct {
+	Storage *Storage
+}
+
 func (sz *SpecificSize) SetSize(length, width, height int, kUV float32) {
 	sz.volume = float32(length * width * height)
 	sz.usefulVolume = sz.volume * kUV
@@ -43,11 +47,11 @@ func (c *Cell) GetNumericView() string {
 	return fmt.Sprintf("%01d-%02d-%02d-%02d-%02d", c.WhsId, c.ZoneId, c.PassageId, c.RackId, c.Floor)
 }
 
-func (c *Cell) AddProduct(product IProduct, quantity int) {
+func (cs *CellService) AddProduct(cell *Cell, product *Product, quantity int) {
 
-	fmt.Println(product.GetProductId())
+	fmt.Println(product.Id)
 }
 
-func (c *Cell) RemoveProduct(product Product, quantity int) {
+func (cs *CellService) RemoveProduct(product Product, quantity int) {
 
 }
