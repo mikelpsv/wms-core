@@ -48,7 +48,6 @@ func (c *Cell) GetNumericView() string {
 }
 
 func (cs *CellService) AddProduct(cell *Cell, product *Product, quantity int) {
-
 	fmt.Println(product.Id)
 }
 
