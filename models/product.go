@@ -94,3 +94,20 @@ func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, er
 
 	return p, nil
 }
+
+func (ps *ProductService) GetProducts() ([]Product, error) {
+	sql_prod := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturer m ON p.manufacturer_id = m.id"
+	rows, err := ps.Storage.Query(sql_prod)
+	if err != nil{
+		return nil, err
+	}
+	defer rows.Close()
+
+	prods := make([]Product, 0, 10)
+	for rows.Next(){
+		p:=new(Product)
+		err = rows.Scan(p.Id, p.Name, p.Manufacturer.Id, p.Manufacturer.Name)
+		prods  = append(prods, *p)
+	}
+	return prods, nil
+}

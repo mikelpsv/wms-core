@@ -45,6 +45,10 @@ func (s *Storage) GetZoneService() *ZoneService {
 	return zs
 }
 
+func (s *Storage) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return s.Db.Query(query, args...)
+}
+
 func (s *Storage) GetCellService() *CellService {
 	cs := new(CellService)
 	cs.Storage = s
