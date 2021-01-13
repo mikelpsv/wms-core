@@ -96,7 +96,7 @@ func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, er
 }
 
 func (ps *ProductService) GetProducts() ([]Product, error) {
-	sql_prod := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturer m ON p.manufacturer_id = m.id"
+	sql_prod := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturers m ON p.manufacturer_id = m.id"
 	rows, err := ps.Storage.Query(sql_prod)
 	if err != nil{
 		return nil, err
