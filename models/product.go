@@ -26,7 +26,7 @@ type ProductService struct {
 	Storage *Storage
 }
 
-func (ps *ProductService) GetProductBarcodes(productId int64) (*map[string]int, error) {
+func (ps *ProductService) GetProductBarcodes(productId int64) (map[string]int, error) {
 	var bcVal string
 	var bcType int
 
@@ -50,7 +50,7 @@ func (ps *ProductService) GetProductBarcodes(productId int64) (*map[string]int, 
 	if len(bMap) == 0 {
 		return nil, sql.ErrNoRows
 	}
-	return &bMap, nil
+	return bMap, nil
 }
 
 func (ps *ProductService) FindProductById(productId int64) (*Product, error) {
@@ -70,7 +70,7 @@ func (ps *ProductService) FindProductById(productId int64) (*Product, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.Barcodes = *pBarcodes
+	p.Barcodes = pBarcodes
 	return p, nil
 }
 
@@ -96,18 +96,18 @@ func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, er
 }
 
 func (ps *ProductService) GetProducts() ([]Product, error) {
-	sql_prod := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturers m ON p.manufacturer_id = m.id"
-	rows, err := ps.Storage.Query(sql_prod)
-	if err != nil{
+	sqlProd := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturers m ON p.manufacturer_id = m.id"
+	rows, err := ps.Storage.Query(sqlProd)
+	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	prods := make([]Product, 0, 10)
-	for rows.Next(){
-		p:=new(Product)
+	for rows.Next() {
+		p := new(Product)
 		err = rows.Scan(p.Id, p.Name, p.Manufacturer.Id, p.Manufacturer.Name)
-		prods  = append(prods, *p)
+		prods = append(prods, *p)
 	}
 	return prods, nil
 }

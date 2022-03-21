@@ -15,13 +15,11 @@ func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	connStr := fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable", host, dbname, dbuser, dbpass)
 	s.Db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		//log.Fatal(err)
 		return err
 	}
 
 	err = s.Db.Ping()
 	if err != nil {
-		//log.Fatal(err)
 		return err
 	}
 	return nil
@@ -33,12 +31,18 @@ func (s *Storage) GetProductService() *ProductService {
 	return ps
 }
 
+/*
+	менеджер для работы со складами
+*/
 func (s *Storage) GetWhsService() *WhsService {
 	ws := new(WhsService)
 	ws.Storage = s
 	return ws
 }
 
+/*
+	менеджер для работы с зонами
+*/
 func (s *Storage) GetZoneService() *ZoneService {
 	zs := new(ZoneService)
 	zs.Storage = s
@@ -66,6 +70,9 @@ func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
 	return c, nil
 }
 
+/*
+	Положить в ячейку (cell) продукт (prod) в количестве (quantity)
+*/
 func (s *Storage) Put(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 	sqlIns := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
@@ -80,6 +87,9 @@ func (s *Storage) Put(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int,
 	return quantity, nil
 }
 
+/*
+	Взять из ячейки (cell) продукт (prod) в количестве (quantity)
+*/
 func (s *Storage) Get(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 
@@ -123,7 +133,10 @@ func (s *Storage) Get(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int,
 	return quantity, nil
 }
 
-func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (*map[int]int, error) {
+/*
+
+ */
+func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (map[int]int, error) {
 	var zoneId, cellId, prodId, quantity int
 	res := make(map[int]int)
 
@@ -152,7 +165,7 @@ func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (*map[int]int, erro
 		}
 		res[prodId] = quantity
 	}
-	return &res, nil
+	return res, nil
 }
 
 func (s *Storage) Move(cellSrc, cellDst *Cell, prod *Product, quantity int) error {

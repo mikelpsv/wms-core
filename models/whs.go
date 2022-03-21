@@ -1,15 +1,21 @@
 package models
 
 type Whs struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
+	Id             int    `json:"id"`
+	Name           string `json:"name"`
+	Address        string `json:"address"`
+	AcceptanceZone Zone
+	ShippingZone   Zone
+	StorageZones   []Zone
 }
 
 type WhsService struct {
 	Storage *Storage
 }
 
+/*
+	Поиск склада по идентификатору
+*/
 func (ws *WhsService) FindWhsById(whsId int64) (*Whs, error) {
 	sqlCell := "SELECT id, name FROM whs WHERE id = $1"
 	row := ws.Storage.Db.QueryRow(sqlCell, whsId)
@@ -19,4 +25,35 @@ func (ws *WhsService) FindWhsById(whsId int64) (*Whs, error) {
 		return nil, err
 	}
 	return w, nil
+}
+
+/*
+	Возвращает список зон склада
+*/
+func (ws *WhsService) GetZones(whs Whs) ([]Zone, error) {
+	return ws.GetZonesByWhsId(whs.Id)
+}
+
+/*
+	Возвращает список зон склада по его идентификатору
+*/
+func (ws *WhsService) GetZonesByWhsId(whsId int) ([]Zone, error) {
+	sqlZones := "SELECT id, name FROM zones WHERE whs_id =$1"
+
+	rows, err := ws.Storage.Db.Query(sqlZones, whsId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make([]Zone, 0)
+	for rows.Next() {
+		z := Zone{}
+		err := rows.Scan(&z.Id, &z.Name)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, z)
+	}
+	return res, nil
 }

@@ -11,6 +11,7 @@ type SpecificSize struct {
 	usefulVolume float32 // lentgth * width * height * K(0.8)
 }
 
+// Структура ячейки
 type Cell struct {
 	Id           int64        `json:"id"`
 	Name         string       `json:"name"`
@@ -50,4 +51,3 @@ func (c *Cell) GetNumericView() string {
 func (cs *CellService) AddProduct(cell *Cell, product *Product, quantity int) {
 	fmt.Println(product.Id)
 }
-

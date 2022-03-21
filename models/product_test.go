@@ -194,7 +194,7 @@ func TestStorage_GetProductBarcodes(t *testing.T) {
 		t.Error(err, "err must not be sql.ErrNoRows")
 	}
 
-	if mBc != nil && len(*mBc) != 3 {
+	if mBc != nil && len(mBc) != 3 {
 		t.Error("wrong number of rows count")
 	}
 }
