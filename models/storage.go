@@ -6,6 +6,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Типы штрихкодов
+const (
+	BarcodeTypeEAN13 = iota
+	BarcodeTypeEAN8
+	BarcodeTypeEAN14
+	BarcodeTypeCode128
+)
+
 type Storage struct {
 	Db *sql.DB
 }
@@ -25,40 +33,41 @@ func (s *Storage) Init(host, dbname, dbuser, dbpass string) error {
 	return nil
 }
 
+// Возвращает менеджер для работы с продуктами
 func (s *Storage) GetProductService() *ProductService {
 	ps := new(ProductService)
 	ps.Storage = s
 	return ps
 }
 
-/*
-	менеджер для работы со складами
-*/
+// Возвращает менеджер для работы со складами
 func (s *Storage) GetWhsService() *WhsService {
 	ws := new(WhsService)
 	ws.Storage = s
 	return ws
 }
 
-/*
-	менеджер для работы с зонами
-*/
+// Возвращает менеджер для работы с зонами склада
 func (s *Storage) GetZoneService() *ZoneService {
 	zs := new(ZoneService)
 	zs.Storage = s
 	return zs
 }
 
-func (s *Storage) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return s.Db.Query(query, args...)
-}
-
+// Возвращает менеджер для работы с ячейкам
 func (s *Storage) GetCellService() *CellService {
 	cs := new(CellService)
 	cs.Storage = s
 	return cs
 }
 
+
+func (s *Storage) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return s.Db.Query(query, args...)
+}
+
+
+// Возвращает ячейку по внутреннему идентификатору
 func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
 	sqlCell := "SELECT id, name, whs_id, zone_id, passage_id, rack_id, floor FROM cells WHERE id = $1"
 	row := s.Db.QueryRow(sqlCell, cellId)
@@ -70,9 +79,9 @@ func (s *Storage) FindCellById(cellId int64) (*Cell, error) {
 	return c, nil
 }
 
-/*
-	Положить в ячейку (cell) продукт (prod) в количестве (quantity)
-*/
+
+// Размещает в ячейку (cell) продукт (prod) в количестве (quantity)
+// Возвращает количество которое было размещено (quantity)
 func (s *Storage) Put(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 	sqlIns := fmt.Sprintf("INSERT INTO storage%d (zone_id, cell_id, prod_id, quantity) VALUES ($1, $2, $3, $4)", cell.WhsId)
@@ -82,14 +91,13 @@ func (s *Storage) Put(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int,
 		_, err = s.Db.Exec(sqlIns, cell.ZoneId, cell.Id, prod.Id, quantity)
 	}
 	if err != nil {
-		return quantity, err
+		return 0, err
 	}
 	return quantity, nil
 }
 
-/*
-	Взять из ячейки (cell) продукт (prod) в количестве (quantity)
-*/
+// Забирает из ячейки (cell) продукт (prod) в количестве (quantity)
+// Возвращает забранное количество (quantity)
 func (s *Storage) Get(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int, error) {
 	var err error
 
@@ -133,9 +141,7 @@ func (s *Storage) Get(cell *Cell, prod *Product, quantity int, tx *sql.Tx) (int,
 	return quantity, nil
 }
 
-/*
-
- */
+// Возвращает количесво продуктов на св ячейке
 func (s *Storage) Quantity(whsId int, cell Cell, tx *sql.Tx) (map[int]int, error) {
 	var zoneId, cellId, prodId, quantity int
 	res := make(map[int]int)

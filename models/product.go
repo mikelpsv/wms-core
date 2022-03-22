@@ -2,18 +2,7 @@ package models
 
 import "database/sql"
 
-const (
-	BarcodeTypeEAN13 = iota
-	BarcodeTypeEAN8
-	BarcodeTypeEAN14
-	BarcodeTypeCode128
-)
-
-type Manufacturer struct {
-	Id   int
-	Name string
-}
-
+// Продукт. Единица хранения.
 type Product struct {
 	Id           int64          `json:"id"`
 	Name         string         `json:"name"`
@@ -22,10 +11,17 @@ type Product struct {
 	Size         SpecificSize   `json:"size"`
 }
 
+// Производитель
+type Manufacturer struct {
+	Id   int
+	Name string
+}
+
 type ProductService struct {
 	Storage *Storage
 }
 
+// Возвращает список штрихкодов продукта
 func (ps *ProductService) GetProductBarcodes(productId int64) (map[string]int, error) {
 	var bcVal string
 	var bcType int
@@ -53,6 +49,7 @@ func (ps *ProductService) GetProductBarcodes(productId int64) (map[string]int, e
 	return bMap, nil
 }
 
+// Возвращает продукт по внутреннему идентификатору
 func (ps *ProductService) FindProductById(productId int64) (*Product, error) {
 
 	sqlCell := "SELECT p.id, p.name, p.manufacturer_id, m.name as manufacturer_name " +
@@ -74,6 +71,7 @@ func (ps *ProductService) FindProductById(productId int64) (*Product, error) {
 	return p, nil
 }
 
+// Возвращает продукт по штрихкоду
 func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, error) {
 	var pId int64
 	var bcType int
@@ -95,6 +93,7 @@ func (ps *ProductService) FindProductsByBarcode(barcodeStr string) (*Product, er
 	return p, nil
 }
 
+// Возвращает список продуктов
 func (ps *ProductService) GetProducts() ([]Product, error) {
 	sqlProd := "SELECT p.id, p.name, p.manufacturer_id, m.name FROM products p LEFT JOIN manufacturers m ON p.manufacturer_id = m.id"
 	rows, err := ps.Storage.Query(sqlProd)

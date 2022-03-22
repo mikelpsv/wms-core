@@ -1,5 +1,8 @@
 package models
 
+// Склад. Физический склад
+// Обязательно содержит минимум 3 зоны Zone{} - приемки, хранения и отгрузки.
+// Зоны приемки и отгрузки не может быть более 1, эти зоны являются входом и выходом на складе соответственно
 type Whs struct {
 	Id             int    `json:"id"`
 	Name           string `json:"name"`
@@ -14,7 +17,7 @@ type WhsService struct {
 }
 
 /*
-	Поиск склада по идентификатору
+	Возвращает склад по идентификатору
 */
 func (ws *WhsService) FindWhsById(whsId int64) (*Whs, error) {
 	sqlCell := "SELECT id, name FROM whs WHERE id = $1"
@@ -38,7 +41,7 @@ func (ws *WhsService) GetZones(whs Whs) ([]Zone, error) {
 	Возвращает список зон склада по его идентификатору
 */
 func (ws *WhsService) GetZonesByWhsId(whsId int) ([]Zone, error) {
-	sqlZones := "SELECT id, name FROM zones WHERE whs_id =$1"
+	sqlZones := "SELECT id, name, zone_type FROM zones WHERE whs_id = $1"
 
 	rows, err := ws.Storage.Db.Query(sqlZones, whsId)
 	if err != nil {
@@ -49,7 +52,7 @@ func (ws *WhsService) GetZonesByWhsId(whsId int) ([]Zone, error) {
 	res := make([]Zone, 0)
 	for rows.Next() {
 		z := Zone{}
-		err := rows.Scan(&z.Id, &z.Name)
+		err := rows.Scan(&z.Id, &z.Name, &z.ZoneType)
 		if err != nil {
 			return nil, err
 		}
