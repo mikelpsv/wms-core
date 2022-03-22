@@ -2,29 +2,21 @@ package models
 
 import "fmt"
 
-// Размеры ячейки (см/см3)
-// полный объем: lentgth * width * height
-// полезный объем: lentgth * width * height * K(0.8)
-type SpecificSize struct {
-	length       int
-	width        int
-	height       int
-	volume       float32
-	usefulVolume float32
-}
-
 // Ячейка склада
 type Cell struct {
-	Id           int64        `json:"id"`
-	Name         string       `json:"name"`
-	WhsId        int          `json:"whs_id"`     // Id склада (может быть именован)
-	ZoneId       int          `json:"zone_id"`    // Id зоны назначения (может быть именован)
-	PassageId    int          `json:"passage_id"` // Id проезда (может быть именован)
-	RackId       int          `json:"rack_id"`    // Id стеллажа (может быть именован)
-	Floor        int          `json:"floor"`
-	IsSizeFree   bool         `json:"is_size_free"`
-	IsWeightFree bool         `json:"is_weight_free"`
-	Size         SpecificSize `json:"size"`
+	Id            int64        `json:"id"`
+	Name          string       `json:"name"`
+	WhsId         int          `json:"whs_id"`     // Id склада (может быть именован)
+	ZoneId        int          `json:"zone_id"`    // Id зоны назначения (может быть именован)
+	PassageId     int          `json:"passage_id"` // Id проезда (может быть именован)
+	RackId        int          `json:"rack_id"`    // Id стеллажа (может быть именован)
+	Floor         int          `json:"floor"`
+	IsSizeFree    bool         `json:"is_size_free"`
+	IsWeightFree  bool         `json:"is_weight_free"`
+	NotAllowedIn  bool         `json:"not_allowed_in"`
+	NotAllowedOut bool         `json:"not_allowed_out"`
+	IsService     bool         `json:"is_service"`
+	Size          SpecificSize `json:"size"`
 }
 
 type CellService struct {
@@ -52,8 +44,4 @@ func (c *Cell) GetNumeric() string {
 // Человеко-понятное представление
 func (c *Cell) GetNumericView() string {
 	return fmt.Sprintf("%01d-%02d-%02d-%02d-%02d", c.WhsId, c.ZoneId, c.PassageId, c.RackId, c.Floor)
-}
-
-func (cs *CellService) AddProduct(cell *Cell, product *Product, quantity int) {
-	fmt.Println(product.Id)
 }

@@ -42,29 +42,3 @@ func TestCell_GetNumeric(t *testing.T) {
 		t.Errorf("invalid view %s", strView)
 	}
 }
-
-func TestCell_AddProduct(t *testing.T) {
-	s := new(Storage)
-	s.Init("localhost", "wmsdb", "devuser", "devuser")
-	c, err := s.FindCellById(1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	p := new(Product)
-	p.Id = 30
-	p.Name = "Test product"
-	p.Barcodes = map[string]int{
-		"5421545465465": 1,
-	}
-
-	cs := new(CellService)
-	cs.AddProduct(c, p, 300)
-
-	c2, err := s.FindCellById(2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	cs.AddProduct(c2, p, 3)
-}

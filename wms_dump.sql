@@ -3,7 +3,30 @@
 --
 
 -- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped by pg_dump version 13.5 (Ubuntu 13.5-2.pgdg20.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+DROP DATABASE IF EXISTS wmsdb;
+--
+-- Name: wmsdb; Type: DATABASE; Schema: -; Owner: devuser
+--
+
+CREATE DATABASE wmsdb WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE = 'en_US.utf8';
+
+
+ALTER DATABASE wmsdb OWNER TO devuser;
+
+\connect wmsdb
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -45,14 +68,17 @@ CREATE TABLE public.cells (
     passage_id integer DEFAULT 0 NOT NULL,
     rack_id integer DEFAULT 0 NOT NULL,
     floor integer DEFAULT 0 NOT NULL,
-    size_length integer DEFAULT 0 NOT NULL,
-    size_width integer DEFAULT 0 NOT NULL,
-    size_height integer DEFAULT 0 NOT NULL,
-    size_volume integer DEFAULT 0 NOT NULL,
-    size_usefull_volume integer DEFAULT 0 NOT NULL,
-    size_weight integer DEFAULT 0 NOT NULL,
+    sz_length integer DEFAULT 0 NOT NULL,
+    sz_width integer DEFAULT 0 NOT NULL,
+    sz_height integer DEFAULT 0 NOT NULL,
+    sz_volume numeric(8,3) DEFAULT 0 NOT NULL,
+    sz_uf_volume numeric(8,3) DEFAULT 0 NOT NULL,
+    sz_weight numeric(8,3) DEFAULT 0 NOT NULL,
     is_size_free boolean DEFAULT false NOT NULL,
-    is_weight_free boolean DEFAULT false NOT NULL
+    is_weight_free boolean DEFAULT false NOT NULL,
+    not_allowed_in boolean DEFAULT false NOT NULL,
+    not_allowed_out boolean DEFAULT false NOT NULL,
+    is_service boolean DEFAULT false NOT NULL
 );
 
 
@@ -121,7 +147,13 @@ ALTER SEQUENCE public.manufacturers_id_seq OWNED BY public.manufacturers.id;
 CREATE TABLE public.products (
     id integer NOT NULL,
     name character varying(255) DEFAULT ''::character varying NOT NULL,
-    manufacturer_id integer DEFAULT 0
+    manufacturer_id integer DEFAULT 0,
+    sz_length integer DEFAULT 0 NOT NULL,
+    sz_wight integer DEFAULT 0 NOT NULL,
+    sz_height integer DEFAULT 0 NOT NULL,
+    sz_weight numeric(8,3) DEFAULT 0 NOT NULL,
+    sz_volume numeric(8,3) DEFAULT 0 NOT NULL,
+    sz_uf_volume numeric(8,3) DEFAULT 0 NOT NULL
 );
 
 
@@ -273,6 +305,7 @@ ALTER TABLE ONLY public.zones ALTER COLUMN id SET DEFAULT nextval('public.zones_
 --
 
 COPY public.barcodes (product_id, barcode, barcode_type) FROM stdin;
+2	1234567890	3
 \.
 
 
@@ -280,9 +313,9 @@ COPY public.barcodes (product_id, barcode, barcode_type) FROM stdin;
 -- Data for Name: cells; Type: TABLE DATA; Schema: public; Owner: devuser
 --
 
-COPY public.cells (id, name, whs_id, zone_id, passage_id, rack_id, floor, size_length, size_width, size_height, size_volume, size_usefull_volume, size_weight, is_size_free, is_weight_free) FROM stdin;
-1	test 1	1	1	2	0	3	0	0	0	0	0	0	f	f
-2	invalid storage	99	1	1	0	1	0	0	0	0	0	0	f	f
+COPY public.cells (id, name, whs_id, zone_id, passage_id, rack_id, floor, sz_length, sz_width, sz_height, sz_volume, sz_uf_volume, sz_weight, is_size_free, is_weight_free, not_allowed_in, not_allowed_out, is_service) FROM stdin;
+1	test 1	1	1	2	0	3	0	0	0	0.000	0.000	0.000	f	f	f	f	f
+2	invalid storage	99	1	1	0	1	0	0	0	0.000	0.000	0.000	f	f	f	f	f
 \.
 
 
@@ -291,6 +324,8 @@ COPY public.cells (id, name, whs_id, zone_id, passage_id, rack_id, floor, size_l
 --
 
 COPY public.manufacturers (id, name) FROM stdin;
+1	Pfizer
+2	fdgsdf
 \.
 
 
@@ -298,7 +333,9 @@ COPY public.manufacturers (id, name) FROM stdin;
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: devuser
 --
 
-COPY public.products (id, name, manufacturer_id) FROM stdin;
+COPY public.products (id, name, manufacturer_id, sz_length, sz_wight, sz_height, sz_weight, sz_volume, sz_uf_volume) FROM stdin;
+2	Тестовый продукт	1	0	0	0	0.000	0.000	0.000
+4	test 	2	0	0	0	0.000	0.000	0.000
 \.
 
 
@@ -307,6 +344,14 @@ COPY public.products (id, name, manufacturer_id) FROM stdin;
 --
 
 COPY public.storage1 (zone_id, cell_id, prod_id, quantity) FROM stdin;
+0	2	32	100
+0	2	34	40
+0	2	34	40
+0	2	34	40
+0	2	34	40
+0	2	34	40
+0	2	32	100
+0	2	32	-180
 0	2	32	100
 0	2	34	40
 0	2	34	40
@@ -345,14 +390,14 @@ SELECT pg_catalog.setval('public.cells_id_seq', 2, true);
 -- Name: manufacturers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: devuser
 --
 
-SELECT pg_catalog.setval('public.manufacturers_id_seq', 1, false);
+SELECT pg_catalog.setval('public.manufacturers_id_seq', 1, true);
 
 
 --
 -- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: devuser
 --
 
-SELECT pg_catalog.setval('public.products_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_id_seq', 4, true);
 
 
 --

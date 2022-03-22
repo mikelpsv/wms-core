@@ -35,8 +35,10 @@ func TestStorage_FindCellById(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	rows := sqlmock.NewRows([]string{"id", "name", "whs_id", "zone_id", "passage_id", "rack_id", "floor"})
-	rows.AddRow(1, "test 1", 1, 1, 2, 3, 1)
+	rows := sqlmock.NewRows([]string{"id", "name", "whs_id", "zone_id", "passage_id", "rack_id", "floor",
+		"sz_length", "sz_width", "sz_height", "sz_volume", "sz_if_volume", "sz_weight",
+		"not_allowed_in", "not_allowed_out", "is_service", "is_size_free", "is_weight_free"})
+	rows.AddRow(1, "test 1", 1, 1, 2, 3, 1, 2, 2, 2, 2, 2, 2, false, false, false, false, false)
 
 	mock.ExpectQuery("^SELECT (.+) FROM cells").
 		WillReturnRows(rows)
