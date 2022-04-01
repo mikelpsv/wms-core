@@ -34,3 +34,28 @@ func (zs *ZoneService) FindZoneById(zoneId int64) (*Zone, error) {
 	}
 	return z, nil
 }
+
+/*
+	Возвращает список всех зон
+*/
+func (zs *ZoneService) GetZones(whs Whs) ([]Zone, error) {
+	sqlZones := "SELECT id, name FROM zones"
+
+	rows, err := zs.Storage.Db.Query(sqlZones)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make([]Zone, 0)
+	for rows.Next() {
+		z := Zone{}
+		err := rows.Scan(&z.Id, &z.Name)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, z)
+	}
+	return res, nil
+}
+
