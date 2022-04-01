@@ -88,6 +88,11 @@ func (s *Storage) GetCellService() *CellService {
 	return cs
 }
 
+func (s *Storage) GetWarehouses()  {
+	
+}
+
+
 func (s *Storage) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return s.Db.Query(query, args...)
 }

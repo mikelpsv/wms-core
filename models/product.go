@@ -13,8 +13,8 @@ type Product struct {
 
 // Производитель
 type Manufacturer struct {
-	Id   int
-	Name string
+	Id   int64 `json:"id"`
+	Name string `json:"name"`
 }
 
 type ProductService struct {
@@ -105,8 +105,27 @@ func (ps *ProductService) GetProducts() ([]Product, error) {
 	prods := make([]Product, 0, 10)
 	for rows.Next() {
 		p := new(Product)
-		err = rows.Scan(p.Id, p.Name, p.Manufacturer.Id, p.Manufacturer.Name)
+		err = rows.Scan(&p.Id, &p.Name, &p.Manufacturer.Id, &p.Manufacturer.Name)
 		prods = append(prods, *p)
 	}
 	return prods, nil
 }
+
+// Возвращает список производителей
+func (ps *ProductService) GetManufacturers() ([]Manufacturer, error) {
+	sqlMnf := "SELECT m.id, m.name FROM manufacturers m"
+	rows, err := ps.Storage.Query(sqlMnf)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mnfs := make([]Manufacturer, 0, 10)
+	for rows.Next() {
+		m := new(Manufacturer)
+		err = rows.Scan(&m.Id, &m.Name)
+		mnfs = append(mnfs, *m)
+	}
+	return mnfs, nil
+}
+

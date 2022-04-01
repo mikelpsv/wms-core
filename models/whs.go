@@ -30,6 +30,23 @@ func (ws *WhsService) FindWhsById(whsId int64) (*Whs, error) {
 	return w, nil
 }
 
+// Возвращает список складов
+func (ws *WhsService) GetWarehouses() ([]Whs, error) {
+	sqlProd := "SELECT w.id, w.name FROM whs w"
+	rows, err := ws.Storage.Query(sqlProd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	whss := make([]Whs, 0, 10)
+	for rows.Next() {
+		w := new(Whs)
+		err = rows.Scan(&w.Id, &w.Name)
+		whss = append(whss, *w)
+	}
+	return whss, nil
+}
 /*
 	Возвращает список зон склада
 */
