@@ -47,6 +47,7 @@ func (ws *WhsService) GetWarehouses() ([]Whs, error) {
 	}
 	return whss, nil
 }
+
 /*
 	Возвращает список зон склада
 */
@@ -76,4 +77,11 @@ func (ws *WhsService) GetZonesByWhsId(whsId int) ([]Zone, error) {
 		res = append(res, z)
 	}
 	return res, nil
+}
+
+/*
+
+ */
+func (ws *WhsService) CreateWarehouse(whs *Whs) {
+
 }
